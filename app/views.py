@@ -9,6 +9,8 @@ from app import app
 from flask import render_template, request, redirect, url_for, flash, session, abort
 from werkzeug.utils import secure_filename
 
+from app.forms import UploadForm
+
 
 ###
 # Routing for your application.
@@ -23,24 +25,29 @@ def home():
 @app.route('/about/')
 def about():
     """Render the website's about page."""
-    return render_template('about.html', name="Mary Jane")
+    return render_template('about.html', name="Mario Munroe")
 
 
 @app.route('/upload', methods=['POST', 'GET'])
 def upload():
+    
     if not session.get('logged_in'):
         abort(401)
 
     # Instantiate your form class
-
+    uploadForm= UploadForm()
+    if request.method =='GET':
+        return render_template('upload.html', form=uploadForm)
     # Validate file upload on submit
-    if request.method == 'POST':
+    if request.method == 'POST' and uploadForm.validate_on_submit():
         # Get file data and save to your uploads folder
-
-        flash('File Saved', 'success')
-        return redirect(url_for('home'))
-
-    return render_template('upload.html')
+            photo = uploadForm.photo.data
+            filename = secure_filename(photo.filename)
+            photo.save(os.path.join(
+            app.config['UPLOAD_FOLDER'], filename
+            ))
+            flash('File Saved', 'success')
+    return redirect(url_for('home'))
 
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -62,6 +69,8 @@ def logout():
     session.pop('logged_in', None)
     flash('You were logged out', 'success')
     return redirect(url_for('home'))
+
+
 
 
 ###
